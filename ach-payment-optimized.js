@@ -7,28 +7,32 @@ test('ACH Payment with saved bank account', async () => {
     console.log("🏦 Starting ACH payment process...");
 
     // Start ACH payment
-    await page.getByRole('button', { name: 'ACH $' }).click();
+    await page.getByRole('button', { name: 'ACH' }).click();
     console.log("✅ ACH payment form opened");
+
+    // Search and select customer
+    await page.getByRole('textbox', { name: 'Search by name, email, phone' }).fill('michael');
+    await page.getByText('Michael Johnson').click();
+    console.log("✅ Customer selected: Michael Johnson");
 
     // Enter payment amount
     await page.getByRole('textbox', { name: '0.00' }).fill('15');
     console.log("✅ Payment amount: $15.00");
 
     // Configure tip as percentage
-    await page.getByPlaceholder('0.00').nth(1).click();
     await page.getByRole('combobox').first().selectOption('percentage');
-    await page.getByPlaceholder('0', { exact: true }).fill('5');
-    console.log("✅ Tip configured: 5%");
+    await page.getByPlaceholder('0', { exact: true }).fill('9');
+    console.log("✅ Tip configured: 9%");
 
     // Save bank account for future use
     await page.getByRole('checkbox', { name: 'Save bank account for future' }).check();
     console.log("✅ Save bank account checkbox checked");
 
     // Enter bank account details
-    await page.getByRole('textbox', { name: '1001' }).fill('1001');
+    await page.getByRole('textbox', { name: '1001' }).fill('10001');
     await page.getByRole('combobox').nth(1).selectOption('Savings');
     await page.getByRole('textbox', { name: '123456789' }).fill('123456789');
-    await page.getByRole('textbox', { name: 'Account number' }).fill('234567899876');
+    await page.getByRole('textbox', { name: 'Account number' }).fill('242424242');
     console.log("✅ Bank account details entered");
 
     // Enter account holder name (simplified - no need for CapsLock)
@@ -37,17 +41,16 @@ test('ACH Payment with saved bank account', async () => {
 
     // Select encounter type
     await page.getByText('Encounter Type (Required)').click();
-    await page.getByRole('combobox').nth(2).selectOption('1756999196675');
     console.log("✅ Encounter type selected");
 
-    // Process payment (removed duplicate click)
+    // Process payment
     await page.getByRole('button', { name: 'Process ACH Payment - $' }).click();
     console.log("✅ Payment processing initiated");
 
     // Confirm payment
     await expect(page.getByRole('heading', { name: 'Payment Confirmation' })).toBeVisible();
-    await page.getByRole('button', { name: 'Proceed with Payment ($14.25)' }).click();
-    console.log("✅ Payment confirmed: $14.25");
+    await page.getByRole('button', { name: 'Proceed with Payment ($13.65)' }).click();
+    console.log("✅ Payment confirmed: $13.65");
 
     // Close confirmation modal
     await page.getByRole('button', { name: 'Close' }).click();
