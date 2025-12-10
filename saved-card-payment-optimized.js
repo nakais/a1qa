@@ -39,7 +39,7 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     let customerSelected = false;
     let selectedCustomerName = '';
     let attempt = 0;
-    const usedNames = new Set(); // Track used names to avoid repetition
+    const usedNames = new Set();
     
     // Keep searching until a customer is found
     while (!customerSelected) {
@@ -48,7 +48,6 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
       // Select a random American name that hasn't been used yet
       let randomName;
       if (usedNames.size >= americanNames.length) {
-        // If all names used, reset and start over
         usedNames.clear();
       }
       
@@ -65,112 +64,47 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
       console.log(`🔍 Attempt ${attempt}: Searched with random name: "${searchQuery}"`);
       
       // Wait for search results dropdown to appear
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(2000);
       
-      // Strategy 1: Look for dropdown/autocomplete options
+      // Get all dropdown options
       const allOptions = page.locator('[role="option"], [role="listbox"] [role="option"], [class*="option"]:not([class*="sidebar"]), [class*="item"]:not([class*="sidebar"])');
       const optionCount = await allOptions.count();
       console.log(`   Found ${optionCount} option(s) in dropdown`);
       
       if (optionCount > 0) {
-        // Find first option that looks like a customer name (not UI element or Admin)
-        for (let i = 0; i < Math.min(optionCount, 10); i++) {
+        // Find first valid customer (skip Admin/System accounts)
+        for (let i = 0; i < optionCount; i++) {
           const option = allOptions.nth(i);
           const text = await option.textContent();
           
-          // Skip UI elements, Admin accounts, and validate it looks like a customer name
+          // Skip UI elements and Admin accounts
           if (text && 
               !text.includes('Toggle') && 
               !text.includes('Sidebar') && 
               !text.includes('Menu') &&
               !text.includes('Close') &&
               !text.includes('Button') &&
-              !text.toLowerCase().includes('admin') && // Skip Admin accounts
-              !text.toLowerCase().includes('system') && // Skip system accounts
-              text.trim().length > 2 &&
-              /[A-Z]/.test(text)) { // Has capital letter (likely a name)
+              !text.toLowerCase().includes('admin') &&
+              !text.toLowerCase().includes('system') &&
+              text.trim().length > 2) {
             
             try {
               await option.click({ force: true, timeout: 3000 });
               selectedCustomerName = text.trim();
               console.log(`✅ Selected customer: ${selectedCustomerName}`);
               customerSelected = true;
-              break; // Break out of inner for loop
+              break;
             } catch (clickError) {
               console.log(`   ⚠️ Failed to click option "${text.trim()}", trying next...`);
-              // Try next option if this one fails
               continue;
             }
-          } else if (text && (text.toLowerCase().includes('admin') || text.toLowerCase().includes('system'))) {
-            console.log(`   ⚠️ Skipping "${text.trim()}" (Admin/System account)`);
           }
         }
       }
       
-      // Strategy 2: Look for customer names in search results area (excluding Admin)
+      // If customer not found, try another name
       if (!customerSelected) {
-        const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').filter({ 
-          hasNotText: /Toggle|Sidebar|Menu|Close|Button|Admin|System/i
-        });
-        const resultCount = await customerResults.count();
-        console.log(`   Found ${resultCount} customer name pattern(s)`);
-        
-        if (resultCount > 0) {
-          // Check each result to make sure it's not Admin
-          for (let i = 0; i < resultCount; i++) {
-            const result = customerResults.nth(i);
-            const text = await result.textContent();
-            
-            if (text && !text.toLowerCase().includes('admin') && !text.toLowerCase().includes('system')) {
-              try {
-                await result.click({ force: true, timeout: 3000 });
-                selectedCustomerName = text.trim();
-                console.log(`✅ Selected customer: ${selectedCustomerName}`);
-                customerSelected = true;
-                break;
-              } catch (clickError) {
-                console.log(`   ⚠️ Failed to click customer result, trying next...`);
-                continue;
-              }
-            }
-          }
-        }
-      }
-      
-      // Strategy 3: Fallback - look for any text containing the search query (excluding Admin)
-      if (!customerSelected) {
-        const fallbackResults = page.locator(`text=/.*${searchQuery}.*/i`).filter({ 
-          hasNotText: /Toggle|Sidebar|Menu|Close|Button|Admin|System/i
-        });
-        const fallbackCount = await fallbackResults.count();
-        console.log(`   Found ${fallbackCount} text match(es) for "${searchQuery}"`);
-        
-        if (fallbackCount > 0) {
-          // Check each result to make sure it's not Admin
-          for (let i = 0; i < fallbackCount; i++) {
-            const result = fallbackResults.nth(i);
-            const text = await result.textContent();
-            
-            if (text && !text.toLowerCase().includes('admin') && !text.toLowerCase().includes('system')) {
-              try {
-                await result.click({ force: true });
-                selectedCustomerName = text.trim();
-                console.log(`✅ Selected customer from fallback: ${selectedCustomerName}`);
-                customerSelected = true;
-                break;
-              } catch (clickError) {
-                console.log(`   ⚠️ Failed to click fallback result, trying next...`);
-                continue;
-              }
-            }
-          }
-        }
-      }
-      
-      // If customer not found, log and continue to next attempt
-      if (!customerSelected) {
-        console.log(`⚠️ No customer found with "${searchQuery}", trying another name...`);
-        // Small delay before next attempt
+        console.log(`⚠️ No valid customer found with "${searchQuery}", trying another name...`);
         await page.waitForTimeout(500);
       }
     }
