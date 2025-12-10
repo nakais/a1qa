@@ -26,31 +26,27 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     // Generate random three letters for search
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     let searchQuery = '';
-    for (let i = 0; i < 3; i++) {
-      searchQuery += letters[Math.floor(Math.random() * letters.length)];
-    }
+    let customerSelected = false;
+    let selectedCustomerName = '';
+    const maxRetries = 5; // Maximum number of search attempts
     
-    const searchBox = page.getByRole('textbox', { name: 'Search by name, email, phone' });
-    await searchBox.fill(searchQuery);
-    console.log(`✅ Searched with random letters: "${searchQuery}"`);
-    
-    // Wait for search results dropdown to appear
-    await page.waitForTimeout(1000);
-    
-    // Strategy 1: Wait for and click on "Michael Johnson" (most reliable based on original code)
-    try {
-      await expect(page.getByText('Michael Johnson', { exact: true })).toBeVisible({ timeout: 5000 });
-      await page.getByText('Michael Johnson', { exact: true }).click({ force: true });
-      console.log("✅ Selected customer: Michael Johnson");
-    } catch (error) {
-      // Strategy 2: Look for any customer name in search results (avoiding UI elements)
-      console.log("⚠️ 'Michael Johnson' not found, trying alternative approach...");
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // Generate new random 3 letters for each attempt
+      searchQuery = '';
+      for (let i = 0; i < 3; i++) {
+        searchQuery += letters[Math.floor(Math.random() * letters.length)];
+      }
       
-      // Wait a bit more for results
-      await page.waitForTimeout(1000);
+      const searchBox = page.getByRole('textbox', { name: 'Search by name, email, phone' });
+      await searchBox.clear();
+      await searchBox.fill(searchQuery);
+      console.log(`🔍 Attempt ${attempt}: Searched with random letters: "${searchQuery}"`);
       
-      // Look for dropdown options, excluding sidebar/UI elements
-      const allOptions = page.locator('[role="option"], [class*="option"]:not([class*="sidebar"]), [class*="item"]:not([class*="sidebar"])');
+      // Wait for search results dropdown to appear
+      await page.waitForTimeout(1500);
+      
+      // Strategy 1: Look for dropdown/autocomplete options
+      const allOptions = page.locator('[role="option"], [role="listbox"] [role="option"], [class*="option"]:not([class*="sidebar"]), [class*="item"]:not([class*="sidebar"])');
       const optionCount = await allOptions.count();
       
       if (optionCount > 0) {
@@ -59,18 +55,21 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
           const option = allOptions.nth(i);
           const text = await option.textContent();
           
-          // Skip UI elements
+          // Skip UI elements and validate it looks like a customer name
           if (text && 
               !text.includes('Toggle') && 
               !text.includes('Sidebar') && 
               !text.includes('Menu') &&
               !text.includes('Close') &&
+              !text.includes('Button') &&
               text.trim().length > 2 &&
               /[A-Z]/.test(text)) { // Has capital letter (likely a name)
             
             try {
               await option.click({ force: true, timeout: 3000 });
-              console.log(`✅ Selected customer: ${text.trim()}`);
+              selectedCustomerName = text.trim();
+              console.log(`✅ Selected customer: ${selectedCustomerName}`);
+              customerSelected = true;
               break;
             } catch (clickError) {
               // Try next option if this one fails
@@ -78,23 +77,61 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
             }
           }
         }
-      } else {
-        // Strategy 3: Fallback - look for any text containing the search query
+      }
+      
+      // Strategy 2: Look for customer names in search results area
+      if (!customerSelected) {
+        const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').filter({ 
+          hasNotText: /Toggle|Sidebar|Menu|Close|Button/
+        });
+        const resultCount = await customerResults.count();
+        
+        if (resultCount > 0) {
+          try {
+            await customerResults.first().click({ force: true, timeout: 3000 });
+            selectedCustomerName = await customerResults.first().textContent();
+            console.log(`✅ Selected customer: ${selectedCustomerName?.trim()}`);
+            customerSelected = true;
+          } catch (clickError) {
+            // Continue to next attempt
+          }
+        }
+      }
+      
+      // Strategy 3: Fallback - look for any text containing the search query
+      if (!customerSelected) {
         const fallbackResults = page.locator(`text=/.*${searchQuery}.*/i`).filter({ 
           hasNotText: /Toggle|Sidebar|Menu|Close|Button/
         });
         const fallbackCount = await fallbackResults.count();
         
         if (fallbackCount > 0) {
-          await fallbackResults.first().click({ force: true });
-          const selectedName = await fallbackResults.first().textContent();
-          console.log(`✅ Selected customer from fallback: ${selectedName?.trim()}`);
-        } else {
-          // Take screenshot for debugging
-          await page.screenshot({ path: `customer-search-debug-${Date.now()}.png` });
-          throw new Error(`No customer search results found for "${searchQuery}". Check screenshot for details.`);
+          try {
+            await fallbackResults.first().click({ force: true });
+            selectedCustomerName = await fallbackResults.first().textContent();
+            console.log(`✅ Selected customer from fallback: ${selectedCustomerName?.trim()}`);
+            customerSelected = true;
+          } catch (clickError) {
+            // Continue to next attempt
+          }
         }
       }
+      
+      // If customer found, break out of retry loop
+      if (customerSelected) {
+        break;
+      }
+      
+      // If not found and not last attempt, try again
+      if (attempt < maxRetries) {
+        console.log(`⚠️ No customer found with "${searchQuery}", trying another search...`);
+      }
+    }
+    
+    // If still no customer found after all attempts
+    if (!customerSelected) {
+      await page.screenshot({ path: `customer-search-debug-${Date.now()}.png` });
+      throw new Error(`No customer found after ${maxRetries} search attempts. Check screenshot for details.`);
     }
 
     // ========== PART 3: Handle Saved Cards ==========
@@ -156,26 +193,48 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
       await page.getByRole('link', { name: 'Customers' }).click();
       console.log("✅ Navigated to customers page");
 
-      // Search for customer using the same search query
-      await page.getByRole('textbox', { name: 'Search customers...' }).fill(searchQuery);
-      await page.waitForTimeout(1000);
-      
-      // Try to find and click the customer
-      try {
-        await expect(page.getByText(/Michael|John|David|Sarah|Emma|James|Robert|Mary/i)).toBeVisible({ timeout: 3000 });
-        await page.getByText(/Michael|John|David|Sarah|Emma|James|Robert|Mary/i).first().click();
-        console.log("✅ Customer found and selected");
-      } catch (error) {
-        // Fallback: try clicking first result that looks like a name
-        const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').first();
-        const resultExists = await customerResults.isVisible({ timeout: 2000 }).catch(() => false);
-        if (resultExists) {
-          await customerResults.click({ force: true });
-          console.log("✅ Customer selected from fallback");
-        } else {
-          throw new Error('Could not find customer to delete card');
-        }
-      }
+          // Search for customer using the same search query or customer name
+          await page.getByRole('textbox', { name: 'Search customers...' }).fill(searchQuery);
+          await page.waitForTimeout(1000);
+          
+          // Try to find and click the customer we selected earlier
+          let customerFound = false;
+          
+          // Strategy 1: Try to find by the selected customer name
+          if (selectedCustomerName) {
+            try {
+              const customerNameParts = selectedCustomerName.split(' ');
+              if (customerNameParts.length >= 2) {
+                const firstName = customerNameParts[0];
+                const lastName = customerNameParts[1];
+                const customerElement = page.getByText(new RegExp(`${firstName}.*${lastName}|${lastName}.*${firstName}`, 'i'));
+                const exists = await customerElement.isVisible({ timeout: 2000 }).catch(() => false);
+                if (exists) {
+                  await customerElement.click();
+                  console.log(`✅ Customer found and selected: ${selectedCustomerName}`);
+                  customerFound = true;
+                }
+              }
+            } catch (error) {
+              // Continue to fallback
+            }
+          }
+          
+          // Strategy 2: Fallback - try clicking first result that looks like a name
+          if (!customerFound) {
+            const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').first();
+            const resultExists = await customerResults.isVisible({ timeout: 2000 }).catch(() => false);
+            if (resultExists) {
+              await customerResults.click({ force: true });
+              const foundName = await customerResults.textContent();
+              console.log(`✅ Customer selected from fallback: ${foundName?.trim()}`);
+              customerFound = true;
+            }
+          }
+          
+          if (!customerFound) {
+            throw new Error('Could not find customer to delete card');
+          }
 
       // Navigate to payment methods
       await page.getByRole('combobox').click();
