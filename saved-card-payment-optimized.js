@@ -23,27 +23,46 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     // ========== PART 2: Customer Search ==========
     console.log("👤 Part 2: Searching for customer...");
     
-    // Generate random three letters for search
-    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    // Common American first names for random search
+    const americanNames = [
+      'Michael', 'John', 'David', 'James', 'Robert', 'William', 'Richard', 'Joseph', 'Thomas', 'Christopher',
+      'Daniel', 'Matthew', 'Anthony', 'Mark', 'Donald', 'Steven', 'Paul', 'Andrew', 'Joshua', 'Kenneth',
+      'Kevin', 'Brian', 'George', 'Edward', 'Ronald', 'Timothy', 'Jason', 'Jeffrey', 'Ryan', 'Jacob',
+      'Sarah', 'Mary', 'Jennifer', 'Lisa', 'Nancy', 'Karen', 'Betty', 'Helen', 'Sandra', 'Donna',
+      'Carol', 'Ruth', 'Sharon', 'Michelle', 'Laura', 'Emily', 'Kimberly', 'Deborah', 'Amy', 'Angela',
+      'Ashley', 'Brenda', 'Emma', 'Olivia', 'Cynthia', 'Marie', 'Janet', 'Catherine', 'Frances', 'Ann',
+      'Joyce', 'Diane', 'Alice', 'Julie', 'Heather', 'Teresa', 'Doris', 'Gloria', 'Evelyn', 'Jean',
+      'Cheryl', 'Mildred', 'Katherine', 'Joan', 'Martha', 'Andrea', 'Carrie', 'Shirley', 'Anna', 'Beverly'
+    ];
+    
     let searchQuery = '';
     let customerSelected = false;
     let selectedCustomerName = '';
     let attempt = 0;
+    const usedNames = new Set(); // Track used names to avoid repetition
     
     // Keep searching until a customer is found
     while (!customerSelected) {
       attempt++;
       
-      // Generate new random 3 letters for each attempt
-      searchQuery = '';
-      for (let i = 0; i < 3; i++) {
-        searchQuery += letters[Math.floor(Math.random() * letters.length)];
+      // Select a random American name that hasn't been used yet
+      let randomName;
+      if (usedNames.size >= americanNames.length) {
+        // If all names used, reset and start over
+        usedNames.clear();
       }
+      
+      do {
+        randomName = americanNames[Math.floor(Math.random() * americanNames.length)];
+      } while (usedNames.has(randomName));
+      
+      usedNames.add(randomName);
+      searchQuery = randomName;
       
       const searchBox = page.getByRole('textbox', { name: 'Search by name, email, phone' });
       await searchBox.clear();
       await searchBox.fill(searchQuery);
-      console.log(`🔍 Attempt ${attempt}: Searched with random letters: "${searchQuery}"`);
+      console.log(`🔍 Attempt ${attempt}: Searched with random name: "${searchQuery}"`);
       
       // Wait for search results dropdown to appear
       await page.waitForTimeout(1500);
@@ -128,7 +147,7 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
       
       // If customer not found, log and continue to next attempt
       if (!customerSelected) {
-        console.log(`⚠️ No customer found with "${searchQuery}", trying another search...`);
+        console.log(`⚠️ No customer found with "${searchQuery}", trying another name...`);
         // Small delay before next attempt
         await page.waitForTimeout(500);
       }
