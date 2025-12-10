@@ -25,64 +25,70 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     
     // Search using three letters (e.g., "mic" for Michael)
     const searchQuery = 'mic';
-    await page.getByRole('textbox', { name: 'Search by name, email, phone' }).fill(searchQuery);
+    const searchBox = page.getByRole('textbox', { name: 'Search by name, email, phone' });
+    await searchBox.fill(searchQuery);
     console.log(`✅ Searched with: "${searchQuery}"`);
     
-    // Wait for search results to appear
-    await page.waitForTimeout(1500);
+    // Wait for search results dropdown to appear
+    await page.waitForTimeout(1000);
     
-    // Select first search result using multiple strategies
-    let customerSelected = false;
-    
-    // Strategy 1: Look for dropdown/autocomplete options
-    const dropdownOptions = page.locator('[role="option"], [role="listbox"] [role="option"], .dropdown-item, [class*="option"], [class*="autocomplete"] [class*="item"]');
-    const optionCount = await dropdownOptions.count();
-    
-    if (optionCount > 0) {
-      await dropdownOptions.first().click();
-      const selectedName = await dropdownOptions.first().textContent();
-      console.log(`✅ Selected first search result: ${selectedName?.trim()}`);
-      customerSelected = true;
-    }
-    
-    // Strategy 2: Look for clickable customer names in search results
-    if (!customerSelected) {
-      const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').or(page.getByText(/^[A-Z][a-z]+ [A-Z][a-z]+$/));
-      const resultCount = await customerResults.count();
+    // Strategy 1: Wait for and click on "Michael Johnson" (most reliable based on original code)
+    try {
+      await expect(page.getByText('Michael Johnson', { exact: true })).toBeVisible({ timeout: 5000 });
+      await page.getByText('Michael Johnson', { exact: true }).click({ force: true });
+      console.log("✅ Selected customer: Michael Johnson");
+    } catch (error) {
+      // Strategy 2: Look for any customer name in search results (avoiding UI elements)
+      console.log("⚠️ 'Michael Johnson' not found, trying alternative approach...");
       
-      if (resultCount > 0) {
-        await customerResults.first().click();
-        const selectedName = await customerResults.first().textContent();
-        console.log(`✅ Selected customer: ${selectedName?.trim()}`);
-        customerSelected = true;
-      }
-    }
-    
-    // Strategy 3: Look for any clickable element in search results area
-    if (!customerSelected) {
-      const searchResultsArea = page.locator('[class*="search"], [class*="dropdown"], [class*="results"], [class*="autocomplete"]');
-      const clickableResults = searchResultsArea.locator('div, li, button, a').filter({ hasText: /./ });
-      const fallbackCount = await clickableResults.count();
+      // Wait a bit more for results
+      await page.waitForTimeout(1000);
       
-      if (fallbackCount > 0) {
-        await clickableResults.first().click();
-        const selectedName = await clickableResults.first().textContent();
-        console.log(`✅ Selected customer from fallback: ${selectedName?.trim()}`);
-        customerSelected = true;
-      }
-    }
-    
-    // Strategy 4: Last resort - look for any text that matches the search pattern
-    if (!customerSelected) {
-      const anyMatch = page.locator(`text=/.*${searchQuery}.*/i`);
-      const matchCount = await anyMatch.count();
+      // Look for dropdown options, excluding sidebar/UI elements
+      const allOptions = page.locator('[role="option"], [class*="option"]:not([class*="sidebar"]), [class*="item"]:not([class*="sidebar"])');
+      const optionCount = await allOptions.count();
       
-      if (matchCount > 0) {
-        await anyMatch.first().click();
-        console.log("✅ Selected customer from text match");
-        customerSelected = true;
+      if (optionCount > 0) {
+        // Find first option that looks like a customer name (not UI element)
+        for (let i = 0; i < Math.min(optionCount, 10); i++) {
+          const option = allOptions.nth(i);
+          const text = await option.textContent();
+          
+          // Skip UI elements
+          if (text && 
+              !text.includes('Toggle') && 
+              !text.includes('Sidebar') && 
+              !text.includes('Menu') &&
+              !text.includes('Close') &&
+              text.trim().length > 2 &&
+              /[A-Z]/.test(text)) { // Has capital letter (likely a name)
+            
+            try {
+              await option.click({ force: true, timeout: 3000 });
+              console.log(`✅ Selected customer: ${text.trim()}`);
+              break;
+            } catch (clickError) {
+              // Try next option if this one fails
+              continue;
+            }
+          }
+        }
       } else {
-        throw new Error(`No customer search results found for "${searchQuery}"`);
+        // Strategy 3: Fallback - look for any text containing the search query
+        const fallbackResults = page.locator(`text=/.*${searchQuery}.*/i`).filter({ 
+          hasNotText: /Toggle|Sidebar|Menu|Close|Button/
+        });
+        const fallbackCount = await fallbackResults.count();
+        
+        if (fallbackCount > 0) {
+          await fallbackResults.first().click({ force: true });
+          const selectedName = await fallbackResults.first().textContent();
+          console.log(`✅ Selected customer from fallback: ${selectedName?.trim()}`);
+        } else {
+          // Take screenshot for debugging
+          await page.screenshot({ path: `customer-search-debug-${Date.now()}.png` });
+          throw new Error(`No customer search results found for "${searchQuery}". Check screenshot for details.`);
+        }
       }
     }
 
