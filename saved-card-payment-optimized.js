@@ -73,18 +73,20 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
       console.log(`   Found ${optionCount} option(s) in dropdown`);
       
       if (optionCount > 0) {
-        // Find first option that looks like a customer name (not UI element)
+        // Find first option that looks like a customer name (not UI element or Admin)
         for (let i = 0; i < Math.min(optionCount, 10); i++) {
           const option = allOptions.nth(i);
           const text = await option.textContent();
           
-          // Skip UI elements and validate it looks like a customer name
+          // Skip UI elements, Admin accounts, and validate it looks like a customer name
           if (text && 
               !text.includes('Toggle') && 
               !text.includes('Sidebar') && 
               !text.includes('Menu') &&
               !text.includes('Close') &&
               !text.includes('Button') &&
+              !text.toLowerCase().includes('admin') && // Skip Admin accounts
+              !text.toLowerCase().includes('system') && // Skip system accounts
               text.trim().length > 2 &&
               /[A-Z]/.test(text)) { // Has capital letter (likely a name)
             
@@ -99,48 +101,68 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
               // Try next option if this one fails
               continue;
             }
+          } else if (text && (text.toLowerCase().includes('admin') || text.toLowerCase().includes('system'))) {
+            console.log(`   ⚠️ Skipping "${text.trim()}" (Admin/System account)`);
           }
         }
       }
       
-      // Strategy 2: Look for customer names in search results area
+      // Strategy 2: Look for customer names in search results area (excluding Admin)
       if (!customerSelected) {
         const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').filter({ 
-          hasNotText: /Toggle|Sidebar|Menu|Close|Button/
+          hasNotText: /Toggle|Sidebar|Menu|Close|Button|Admin|System/i
         });
         const resultCount = await customerResults.count();
         console.log(`   Found ${resultCount} customer name pattern(s)`);
         
         if (resultCount > 0) {
-          try {
-            await customerResults.first().click({ force: true, timeout: 3000 });
-            selectedCustomerName = await customerResults.first().textContent();
-            console.log(`✅ Selected customer: ${selectedCustomerName?.trim()}`);
-            customerSelected = true;
-          } catch (clickError) {
-            console.log(`   ⚠️ Failed to click customer result, continuing search...`);
-            // Continue to next attempt
+          // Check each result to make sure it's not Admin
+          for (let i = 0; i < resultCount; i++) {
+            const result = customerResults.nth(i);
+            const text = await result.textContent();
+            
+            if (text && !text.toLowerCase().includes('admin') && !text.toLowerCase().includes('system')) {
+              try {
+                await result.click({ force: true, timeout: 3000 });
+                selectedCustomerName = text.trim();
+                console.log(`✅ Selected customer: ${selectedCustomerName}`);
+                customerSelected = true;
+                break;
+              } catch (clickError) {
+                console.log(`   ⚠️ Failed to click customer result, trying next...`);
+                continue;
+              }
+            }
           }
         }
       }
       
-      // Strategy 3: Fallback - look for any text containing the search query
+      // Strategy 3: Fallback - look for any text containing the search query (excluding Admin)
       if (!customerSelected) {
         const fallbackResults = page.locator(`text=/.*${searchQuery}.*/i`).filter({ 
-          hasNotText: /Toggle|Sidebar|Menu|Close|Button/
+          hasNotText: /Toggle|Sidebar|Menu|Close|Button|Admin|System/i
         });
         const fallbackCount = await fallbackResults.count();
         console.log(`   Found ${fallbackCount} text match(es) for "${searchQuery}"`);
         
         if (fallbackCount > 0) {
-          try {
-            await fallbackResults.first().click({ force: true });
-            selectedCustomerName = await fallbackResults.first().textContent();
-            console.log(`✅ Selected customer from fallback: ${selectedCustomerName?.trim()}`);
-            customerSelected = true;
-          } catch (clickError) {
-            console.log(`   ⚠️ Failed to click fallback result, continuing search...`);
-            // Continue to next attempt
+          // Check each result to make sure it's not Admin
+          for (let i = 0; i < fallbackCount; i++) {
+            const result = fallbackResults.nth(i);
+            const text = await result.textContent();
+            
+            if (text && !text.toLowerCase().includes('admin') && !text.toLowerCase().includes('system')) {
+              try {
+                await result.click({ force: true });
+                selectedCustomerName = text.trim();
+                console.log(`✅ Selected customer from fallback: ${selectedCustomerName}`);
+                customerSelected = true;
+                break;
+              } catch (clickError) {
+                console.log(`   ⚠️ Failed to click fallback result, trying next...`);
+                continue;
+              }
+            }
           }
         }
       }
@@ -257,11 +279,17 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
             throw new Error('Could not find customer to delete card');
           }
 
-      // Navigate to payment methods
-      await page.getByRole('combobox').click();
-      await page.getByRole('option', { name: 'Payment Methods' }).click();
-      await page.waitForTimeout(1000);
-      console.log("✅ Navigated to payment methods");
+        // Navigate to payment methods
+        try {
+          await page.getByRole('combobox').click();
+          await page.waitForTimeout(500);
+          await page.getByRole('option', { name: 'Payment Methods' }).click({ timeout: 5000 });
+          await page.waitForTimeout(1000);
+          console.log("✅ Navigated to payment methods");
+        } catch (navError) {
+          console.log("⚠️ Failed to navigate to payment methods, page may have been closed");
+          throw navError;
+        }
 
       // Find and delete the card (look for the card we just created - ending in 2049)
       const cardElement = page.getByText(/Visa.*2049|Mastercard.*2049|Amex.*2049/i);
@@ -286,11 +314,18 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
 
     console.log("🎉 Saved card payment test completed successfully!");
 
-  } catch (error) {
-    console.error('❌ Saved card payment test failed:', error.message);
-    await page.screenshot({ path: `saved-card-payment-error-${Date.now()}.png` });
-    throw error;
-  }
+    } catch (error) {
+      console.error('❌ Saved card payment test failed:', error.message);
+      try {
+        // Only take screenshot if page is still available
+        if (page && !page.isClosed()) {
+          await page.screenshot({ path: `saved-card-payment-error-${Date.now()}.png` });
+        }
+      } catch (screenshotError) {
+        console.log("⚠️ Could not take screenshot - page may be closed");
+      }
+      throw error;
+    }
 });
 
 // Helper function to add new card
