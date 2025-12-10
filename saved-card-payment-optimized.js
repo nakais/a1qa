@@ -20,22 +20,16 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     await page.getByRole('button', { name: 'Credit Card Keyed $' }).click();
     console.log("✅ Credit card payment form opened");
 
-    // ========== PART 2: Random Customer Search ==========
-    console.log("👤 Part 2: Searching for random customer...");
+    // ========== PART 2: Customer Search ==========
+    console.log("👤 Part 2: Searching for customer...");
     
-    // Generate 3 random words for search
-    const randomWords = ['Michael', 'John', 'David', 'Sarah', 'Emma', 'James', 'Robert', 'Mary'];
-    const searchTerms = [];
-    for (let i = 0; i < 3; i++) {
-      searchTerms.push(randomWords[Math.floor(Math.random() * randomWords.length)]);
-    }
-    const searchQuery = searchTerms.join(' ');
-    
+    // Search using three letters (e.g., "mic" for Michael)
+    const searchQuery = 'mic';
     await page.getByRole('textbox', { name: 'Search by name, email, phone' }).fill(searchQuery);
     console.log(`✅ Searched with: "${searchQuery}"`);
     
     // Wait for search results to appear and select first result
-    await page.waitForTimeout(1500); // Wait for search results to load
+    await page.waitForTimeout(1500);
     
     // Try multiple strategies to find and click first result
     let customerSelected = false;
