@@ -20,113 +20,121 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     await page.getByRole('button', { name: 'Credit Card Keyed $' }).click();
     console.log("✅ Credit card payment form opened");
 
-      // ========== PART 2: Customer Search ==========
-      console.log("👤 Part 2: Searching for customer...");
+    // ========== PART 2: Customer Search ==========
+    console.log("👤 Part 2: Searching for customer...");
+    
+    // Generate random three letters for search
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    let searchQuery = '';
+    let customerSelected = false;
+    let selectedCustomerName = '';
+    let attempt = 0;
+    
+    // Keep searching until a customer is found
+    while (!customerSelected) {
+      attempt++;
       
-      // Generate random three letters for search
-      const letters = 'abcdefghijklmnopqrstuvwxyz';
-      let searchQuery = '';
-      let customerSelected = false;
-      let selectedCustomerName = '';
-      let attempt = 0;
+      // Generate new random 3 letters for each attempt
+      searchQuery = '';
+      for (let i = 0; i < 3; i++) {
+        searchQuery += letters[Math.floor(Math.random() * letters.length)];
+      }
       
-      // Keep searching until a customer is found
-      while (!customerSelected) {
-        attempt++;
-        
-        // Generate new random 3 letters for each attempt
-        searchQuery = '';
-        for (let i = 0; i < 3; i++) {
-          searchQuery += letters[Math.floor(Math.random() * letters.length)];
-        }
-        
-        const searchBox = page.getByRole('textbox', { name: 'Search by name, email, phone' });
-        await searchBox.clear();
-        await searchBox.fill(searchQuery);
-        console.log(`🔍 Attempt ${attempt}: Searched with random letters: "${searchQuery}"`);
-        
-        // Wait for search results dropdown to appear
-        await page.waitForTimeout(1500);
-        
-        // Strategy 1: Look for dropdown/autocomplete options
-        const allOptions = page.locator('[role="option"], [role="listbox"] [role="option"], [class*="option"]:not([class*="sidebar"]), [class*="item"]:not([class*="sidebar"])');
-        const optionCount = await allOptions.count();
-        
-        if (optionCount > 0) {
-          // Find first option that looks like a customer name (not UI element)
-          for (let i = 0; i < Math.min(optionCount, 10); i++) {
-            const option = allOptions.nth(i);
-            const text = await option.textContent();
+      const searchBox = page.getByRole('textbox', { name: 'Search by name, email, phone' });
+      await searchBox.clear();
+      await searchBox.fill(searchQuery);
+      console.log(`🔍 Attempt ${attempt}: Searched with random letters: "${searchQuery}"`);
+      
+      // Wait for search results dropdown to appear
+      await page.waitForTimeout(1500);
+      
+      // Strategy 1: Look for dropdown/autocomplete options
+      const allOptions = page.locator('[role="option"], [role="listbox"] [role="option"], [class*="option"]:not([class*="sidebar"]), [class*="item"]:not([class*="sidebar"])');
+      const optionCount = await allOptions.count();
+      console.log(`   Found ${optionCount} option(s) in dropdown`);
+      
+      if (optionCount > 0) {
+        // Find first option that looks like a customer name (not UI element)
+        for (let i = 0; i < Math.min(optionCount, 10); i++) {
+          const option = allOptions.nth(i);
+          const text = await option.textContent();
+          
+          // Skip UI elements and validate it looks like a customer name
+          if (text && 
+              !text.includes('Toggle') && 
+              !text.includes('Sidebar') && 
+              !text.includes('Menu') &&
+              !text.includes('Close') &&
+              !text.includes('Button') &&
+              text.trim().length > 2 &&
+              /[A-Z]/.test(text)) { // Has capital letter (likely a name)
             
-            // Skip UI elements and validate it looks like a customer name
-            if (text && 
-                !text.includes('Toggle') && 
-                !text.includes('Sidebar') && 
-                !text.includes('Menu') &&
-                !text.includes('Close') &&
-                !text.includes('Button') &&
-                text.trim().length > 2 &&
-                /[A-Z]/.test(text)) { // Has capital letter (likely a name)
-              
-              try {
-                await option.click({ force: true, timeout: 3000 });
-                selectedCustomerName = text.trim();
-                console.log(`✅ Selected customer: ${selectedCustomerName}`);
-                customerSelected = true;
-                break;
-              } catch (clickError) {
-                // Try next option if this one fails
-                continue;
-              }
-            }
-          }
-        }
-        
-        // Strategy 2: Look for customer names in search results area
-        if (!customerSelected) {
-          const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').filter({ 
-            hasNotText: /Toggle|Sidebar|Menu|Close|Button/
-          });
-          const resultCount = await customerResults.count();
-          
-          if (resultCount > 0) {
             try {
-              await customerResults.first().click({ force: true, timeout: 3000 });
-              selectedCustomerName = await customerResults.first().textContent();
-              console.log(`✅ Selected customer: ${selectedCustomerName?.trim()}`);
+              await option.click({ force: true, timeout: 3000 });
+              selectedCustomerName = text.trim();
+              console.log(`✅ Selected customer: ${selectedCustomerName}`);
               customerSelected = true;
+              break; // Break out of inner for loop
             } catch (clickError) {
-              // Continue to next attempt
+              console.log(`   ⚠️ Failed to click option "${text.trim()}", trying next...`);
+              // Try next option if this one fails
+              continue;
             }
           }
-        }
-        
-        // Strategy 3: Fallback - look for any text containing the search query
-        if (!customerSelected) {
-          const fallbackResults = page.locator(`text=/.*${searchQuery}.*/i`).filter({ 
-            hasNotText: /Toggle|Sidebar|Menu|Close|Button/
-          });
-          const fallbackCount = await fallbackResults.count();
-          
-          if (fallbackCount > 0) {
-            try {
-              await fallbackResults.first().click({ force: true });
-              selectedCustomerName = await fallbackResults.first().textContent();
-              console.log(`✅ Selected customer from fallback: ${selectedCustomerName?.trim()}`);
-              customerSelected = true;
-            } catch (clickError) {
-              // Continue to next attempt
-            }
-          }
-        }
-        
-        // If customer not found, log and continue to next attempt
-        if (!customerSelected) {
-          console.log(`⚠️ No customer found with "${searchQuery}", trying another search...`);
         }
       }
       
-      console.log(`✅ Customer search completed after ${attempt} attempt(s)`);
+      // Strategy 2: Look for customer names in search results area
+      if (!customerSelected) {
+        const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').filter({ 
+          hasNotText: /Toggle|Sidebar|Menu|Close|Button/
+        });
+        const resultCount = await customerResults.count();
+        console.log(`   Found ${resultCount} customer name pattern(s)`);
+        
+        if (resultCount > 0) {
+          try {
+            await customerResults.first().click({ force: true, timeout: 3000 });
+            selectedCustomerName = await customerResults.first().textContent();
+            console.log(`✅ Selected customer: ${selectedCustomerName?.trim()}`);
+            customerSelected = true;
+          } catch (clickError) {
+            console.log(`   ⚠️ Failed to click customer result, continuing search...`);
+            // Continue to next attempt
+          }
+        }
+      }
+      
+      // Strategy 3: Fallback - look for any text containing the search query
+      if (!customerSelected) {
+        const fallbackResults = page.locator(`text=/.*${searchQuery}.*/i`).filter({ 
+          hasNotText: /Toggle|Sidebar|Menu|Close|Button/
+        });
+        const fallbackCount = await fallbackResults.count();
+        console.log(`   Found ${fallbackCount} text match(es) for "${searchQuery}"`);
+        
+        if (fallbackCount > 0) {
+          try {
+            await fallbackResults.first().click({ force: true });
+            selectedCustomerName = await fallbackResults.first().textContent();
+            console.log(`✅ Selected customer from fallback: ${selectedCustomerName?.trim()}`);
+            customerSelected = true;
+          } catch (clickError) {
+            console.log(`   ⚠️ Failed to click fallback result, continuing search...`);
+            // Continue to next attempt
+          }
+        }
+      }
+      
+      // If customer not found, log and continue to next attempt
+      if (!customerSelected) {
+        console.log(`⚠️ No customer found with "${searchQuery}", trying another search...`);
+        // Small delay before next attempt
+        await page.waitForTimeout(500);
+      }
+    }
+    
+    console.log(`✅ Customer search completed after ${attempt} attempt(s)`);
 
     // ========== PART 3: Handle Saved Cards ==========
     console.log("💳 Part 3: Checking for saved cards...");
