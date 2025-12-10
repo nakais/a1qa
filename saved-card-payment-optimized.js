@@ -23,11 +23,16 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     // ========== PART 2: Customer Search ==========
     console.log("👤 Part 2: Searching for customer...");
     
-    // Search using three letters (e.g., "mic" for Michael)
-    const searchQuery = 'mic';
+    // Generate random three letters for search
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    let searchQuery = '';
+    for (let i = 0; i < 3; i++) {
+      searchQuery += letters[Math.floor(Math.random() * letters.length)];
+    }
+    
     const searchBox = page.getByRole('textbox', { name: 'Search by name, email, phone' });
     await searchBox.fill(searchQuery);
-    console.log(`✅ Searched with: "${searchQuery}"`);
+    console.log(`✅ Searched with random letters: "${searchQuery}"`);
     
     // Wait for search results dropdown to appear
     await page.waitForTimeout(1000);
@@ -98,6 +103,9 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     // Wait a bit for saved cards section to load
     await page.waitForTimeout(1000);
     
+    // Track if we found a saved card (if yes, we'll skip deletion)
+    let savedCardFound = false;
+    
     // Check if saved cards section exists
     const savedCardsHeading = page.getByRole('heading', { name: /Saved Cards/i });
     const savedCardsExists = await savedCardsHeading.isVisible({ timeout: 3000 }).catch(() => false);
@@ -115,6 +123,7 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
         await firstCard.click();
         const cardText = await firstCard.textContent();
         console.log(`✅ Found and selected saved card: ${cardText?.trim()}`);
+        savedCardFound = true;
         
         // Proceed directly to payment
         await page.getByRole('button', { name: 'Process Card Payment - $' }).click();
@@ -139,41 +148,61 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     await page.getByRole('button', { name: 'Close' }).click();
     console.log("✅ Payment modal closed");
 
-    // ========== PART 5: Delete Saved Card ==========
-    console.log("🗑️ Part 5: Deleting saved card from customer...");
-    
-    await page.getByRole('button', { name: 'Customers' }).click();
-    await page.getByRole('link', { name: 'Customers' }).click();
-    console.log("✅ Navigated to customers page");
-
-    // Search for customer
-    await page.getByRole('textbox', { name: 'Search customers...' }).fill('Michael');
-    await page.getByText('Michael Johnson').click();
-    console.log("✅ Customer found and selected");
-
-    // Navigate to payment methods
-    await page.getByRole('combobox').click();
-    await page.getByRole('option', { name: 'Payment Methods' }).click();
-    await page.waitForTimeout(1000);
-    console.log("✅ Navigated to payment methods");
-
-    // Find and delete the card
-    const cardElement = page.getByText(/Visa.*2049/i);
-    const cardExists = await cardElement.isVisible().catch(() => false);
-    
-    if (cardExists) {
-      await cardElement.click();
-      await page.getByRole('button').nth(2).click();
+    // ========== PART 5: Delete Saved Card (only if we created a new one) ==========
+    if (!savedCardFound) {
+      console.log("🗑️ Part 5: Deleting newly created card from customer...");
       
-      await expect(page.getByRole('heading', { name: 'Delete Payment Method' })).toBeVisible();
-      await page.getByRole('button', { name: 'Delete Card' }).click();
-      console.log("✅ Card deleted successfully");
-    } else {
-      console.log("⚠️ Card not found in payment methods");
-    }
+      await page.getByRole('button', { name: 'Customers' }).click();
+      await page.getByRole('link', { name: 'Customers' }).click();
+      console.log("✅ Navigated to customers page");
 
-    await page.getByRole('button', { name: 'Close' }).click();
-    console.log("✅ Modal closed");
+      // Search for customer using the same search query
+      await page.getByRole('textbox', { name: 'Search customers...' }).fill(searchQuery);
+      await page.waitForTimeout(1000);
+      
+      // Try to find and click the customer
+      try {
+        await expect(page.getByText(/Michael|John|David|Sarah|Emma|James|Robert|Mary/i)).toBeVisible({ timeout: 3000 });
+        await page.getByText(/Michael|John|David|Sarah|Emma|James|Robert|Mary/i).first().click();
+        console.log("✅ Customer found and selected");
+      } catch (error) {
+        // Fallback: try clicking first result that looks like a name
+        const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').first();
+        const resultExists = await customerResults.isVisible({ timeout: 2000 }).catch(() => false);
+        if (resultExists) {
+          await customerResults.click({ force: true });
+          console.log("✅ Customer selected from fallback");
+        } else {
+          throw new Error('Could not find customer to delete card');
+        }
+      }
+
+      // Navigate to payment methods
+      await page.getByRole('combobox').click();
+      await page.getByRole('option', { name: 'Payment Methods' }).click();
+      await page.waitForTimeout(1000);
+      console.log("✅ Navigated to payment methods");
+
+      // Find and delete the card (look for the card we just created - ending in 2049)
+      const cardElement = page.getByText(/Visa.*2049|Mastercard.*2049|Amex.*2049/i);
+      const cardExists = await cardElement.isVisible({ timeout: 3000 }).catch(() => false);
+      
+      if (cardExists) {
+        await cardElement.click();
+        await page.getByRole('button').nth(2).click();
+        
+        await expect(page.getByRole('heading', { name: 'Delete Payment Method' })).toBeVisible();
+        await page.getByRole('button', { name: 'Delete Card' }).click();
+        console.log("✅ Card deleted successfully");
+      } else {
+        console.log("⚠️ Card not found in payment methods - may have already been deleted");
+      }
+
+      await page.getByRole('button', { name: 'Close' }).click();
+      console.log("✅ Modal closed");
+    } else {
+      console.log("✅ Saved card was used - skipping deletion step");
+    }
 
     console.log("🎉 Saved card payment test completed successfully!");
 
