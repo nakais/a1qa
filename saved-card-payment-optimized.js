@@ -28,46 +28,61 @@ test('Saved Card Payment with Random Customer', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Search by name, email, phone' }).fill(searchQuery);
     console.log(`✅ Searched with: "${searchQuery}"`);
     
-    // Wait for search results to appear and select first result
+    // Wait for search results to appear
     await page.waitForTimeout(1500);
     
-    // Try multiple strategies to find and click first result
+    // Select first search result using multiple strategies
     let customerSelected = false;
     
-    // Strategy 1: Look for dropdown options
-    const dropdownOptions = page.locator('[role="option"], [role="listbox"] [role="option"], .dropdown-item, [class*="option"]');
+    // Strategy 1: Look for dropdown/autocomplete options
+    const dropdownOptions = page.locator('[role="option"], [role="listbox"] [role="option"], .dropdown-item, [class*="option"], [class*="autocomplete"] [class*="item"]');
     const optionCount = await dropdownOptions.count();
     
     if (optionCount > 0) {
       await dropdownOptions.first().click();
       const selectedName = await dropdownOptions.first().textContent();
-      console.log(`✅ Selected first search result: ${selectedName}`);
+      console.log(`✅ Selected first search result: ${selectedName?.trim()}`);
       customerSelected = true;
     }
     
     // Strategy 2: Look for clickable customer names in search results
     if (!customerSelected) {
-      const customerResults = page.locator('text=/Michael|John|David|Sarah|Emma|James|Robert|Mary/i');
+      const customerResults = page.locator('text=/^[A-Z][a-z]+ [A-Z][a-z]+$/').or(page.getByText(/^[A-Z][a-z]+ [A-Z][a-z]+$/));
       const resultCount = await customerResults.count();
       
       if (resultCount > 0) {
         await customerResults.first().click();
         const selectedName = await customerResults.first().textContent();
-        console.log(`✅ Selected customer: ${selectedName}`);
+        console.log(`✅ Selected customer: ${selectedName?.trim()}`);
         customerSelected = true;
       }
     }
     
-    // Strategy 3: Fallback - look for any clickable text that looks like a name
+    // Strategy 3: Look for any clickable element in search results area
     if (!customerSelected) {
-      const anyResult = page.locator('div, li, button').filter({ hasText: /^[A-Z][a-z]+ [A-Z][a-z]+$/ });
-      const fallbackCount = await anyResult.count();
+      const searchResultsArea = page.locator('[class*="search"], [class*="dropdown"], [class*="results"], [class*="autocomplete"]');
+      const clickableResults = searchResultsArea.locator('div, li, button, a').filter({ hasText: /./ });
+      const fallbackCount = await clickableResults.count();
       
       if (fallbackCount > 0) {
-        await anyResult.first().click();
-        console.log("✅ Selected customer from fallback");
+        await clickableResults.first().click();
+        const selectedName = await clickableResults.first().textContent();
+        console.log(`✅ Selected customer from fallback: ${selectedName?.trim()}`);
+        customerSelected = true;
+      }
+    }
+    
+    // Strategy 4: Last resort - look for any text that matches the search pattern
+    if (!customerSelected) {
+      const anyMatch = page.locator(`text=/.*${searchQuery}.*/i`);
+      const matchCount = await anyMatch.count();
+      
+      if (matchCount > 0) {
+        await anyMatch.first().click();
+        console.log("✅ Selected customer from text match");
+        customerSelected = true;
       } else {
-        throw new Error('No customer search results found');
+        throw new Error(`No customer search results found for "${searchQuery}"`);
       }
     }
 
