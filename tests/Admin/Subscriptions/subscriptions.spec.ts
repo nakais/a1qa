@@ -33,11 +33,35 @@ test.describe("Subscriptions Tests", () => {
 
     // Additional verification that we're on the correct tab
     await expect(page.getByRole("heading", { name: "Subscription Management" })).toBeVisible();
+  });
 
-    // You can add more specific checks here based on what should be visible on the Subscriptions tab
-    // For example:
-    // await expect(page.locator('[data-testid="subscriptions-container"]')).toBeVisible();
-    // await expect(page.getByText("No subscriptions")).toBeVisible(); // if there are no subscriptions initially
+  test("Generate Subscription Link with Custom Expiry", async () => {
+    const page = adminSuite.getPage();
+
+    // Open Generate Link dialog
+    await page.getByRole("button", { name: "Generate Link" }).click();
+
+    // Select customer
+    await page.getByText("Select customer...").click();
+    await page.getByPlaceholder("Search customers...").fill("michael");
+    await page.getByText("Michael Johnson").click();
+
+    // Select subscription plan
+    await page.getByRole("combobox", { name: "Subscription Plan (Optional" }).click();
+    await page.getByRole("option", { name: "Test Plan5 $11.00/monthly" }).click();
+
+    // Set custom expiry
+    await page.getByRole("combobox", { name: "Link Expiry *" }).click();
+    await page.getByRole("option", { name: "Custom" }).click();
+    await page.getByPlaceholder("Enter number of days (1-365)").fill("100");
+
+    // Generate and verify
+    await page.getByRole("button", { name: "Generate Link" }).click();
+    await expect(page.getByText("✅ Link Generated Successfully!")).toBeVisible();
+
+    // Send via email and close
+    await page.getByRole("button", { name: "Send via Email" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
   });
 
   test.afterEach(async () => {
