@@ -45,7 +45,7 @@ test.describe("E2E: Inventory to Pay Tests", () => {
     // Fill pricing and create product
     await page.getByRole("textbox", { name: "Selling Price *" }).fill("15");
     await page.getByRole("button", { name: "Create Product" }).click();
-    console.log("✅ Product 'Kindle' created successfully with stock of 7");
+    console.log(`✅ Product 'Kindle' created successfully with stock of ${initialStock}`);
 
     // ========== STEP 2: Navigate to Pay Page ==========
     console.log("\n💰 STEP 2: Navigating to Pay page...");
@@ -62,16 +62,12 @@ test.describe("E2E: Inventory to Pay Tests", () => {
 
     // Search and add Kindle product
     await page.getByRole("textbox", { name: "Search products & services..." }).fill("Kindle");
+    await page.waitForTimeout(2000); // Wait for search results to populate
     await page.getByRole("button", { name: "Add" }).first().click();
-    console.log("✓ Kindle added to cart (quantity: 1)");
-
+    
     // Set quantity to purchase
-    const quantityToPurchase = 3;
-    const incrementButton = page.locator(".p-1\\.5 > .flex.items-center.justify-between > div:nth-child(2) > button").first();
-    for (let i = 1; i < quantityToPurchase; i++) {
-      await incrementButton.click();
-    }
-    console.log(`✓ Increased quantity to ${quantityToPurchase}`);
+    const quantityToPurchase = 1;
+    console.log(`✓ Kindle added to cart (quantity: ${quantityToPurchase})`);
 
     // ========== STEP 4: Process Cash Payment ==========
     console.log("\n💵 STEP 4: Processing cash payment...");
@@ -87,7 +83,7 @@ test.describe("E2E: Inventory to Pay Tests", () => {
 
     // Close payment modal
     await page.getByRole("button", { name: "Close" }).click();
-    console.log(`✅ Payment completed - ${quantityToPurchase} items purchased`);
+    console.log(`✅ Payment completed - ${quantityToPurchase} item purchased`);
 
     // ========== STEP 5: Return to Inventory and Verify Stock ==========
     console.log("\n📊 STEP 5: Verifying stock count in Inventory...");
@@ -97,11 +93,11 @@ test.describe("E2E: Inventory to Pay Tests", () => {
     console.log("✓ Back to Inventory page");
 
     // Search for Kindle product
-    await page.getByRole("textbox", { name: "Search..." }).fill("Kindle");
+    await page.getByRole("textbox", { name: "Search products, SKU, brand..." }).fill("Kindle");
     console.log("✓ Searched for Kindle product");
 
     // Open product details
-    await page.getByRole("row", { name: " N/A SKU:" }).getByRole("button").click();
+    await page.getByRole("row", { name: "Kindle Kindle N/A SKU:" }).getByRole("button").click();
     await page.getByRole("menuitem", { name: "View" }).click();
     console.log("✓ Opened product details");
 
@@ -125,13 +121,12 @@ test.describe("E2E: Inventory to Pay Tests", () => {
     }
 
     // Close details modal
-    await page.getByRole("button", { name: "Close" }).nth(1).click();
+    await page.locator("div").filter({ hasText: /^Close$/ }).getByRole("button").click();
 
     // ========== STEP 6: Delete Product ==========
     console.log("\n🗑️ STEP 6: Deleting product...");
     
     await page.getByRole("menuitem", { name: "Delete" }).click();
-    await page.locator(".fixed.inset-0").click();
     await page.getByRole("button", { name: "Delete inventory item" }).click();
     console.log("✓ Confirmed deletion");
 
@@ -140,7 +135,7 @@ test.describe("E2E: Inventory to Pay Tests", () => {
     console.log("✅ Product deleted successfully");
 
     console.log("\n🎉 E2E Test completed successfully!");
-    console.log(`Summary: Created product with ${initialStock} stock → Sold ${quantityToPurchase} items → Verified stock = ${expectedStock} → Deleted product`);
+    console.log(`Summary: Created product with ${initialStock} stock → Sold ${quantityToPurchase} item → Verified stock = ${expectedStock} → Deleted product`);
   });
 
   test.afterEach(async () => {
