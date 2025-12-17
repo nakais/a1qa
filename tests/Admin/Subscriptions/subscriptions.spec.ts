@@ -73,6 +73,62 @@ test.describe("Subscriptions Tests", () => {
     console.log("✅ Test completed successfully!");
   });
 
+  test("Search Customer, Copy Link, and Complete Subscription Payment", async () => {
+    const page = adminSuite.getPage();
+    console.log("Starting: Complete Subscription Payment test");
+
+    // Search for customer by name
+    console.log("Searching for customer: Michael Johnson");
+    await page.getByRole("textbox", { name: "Search by customer or token..." }).fill("michael");
+    await expect(page.getByText("Michael Johnson").first()).toBeVisible();
+
+    // Copy subscription link
+    console.log("Copying subscription link...");
+    await page.getByRole("button", { name: "Copy link" }).first().click();
+    await expect(page.getByText("Link Copied", { exact: true })).toBeVisible();
+    console.log("✅ Link copied successfully");
+
+    // Open link in new tab
+    console.log("Opening subscription link in new tab...");
+    const page2Promise = page.waitForEvent("popup");
+    await page.getByRole("button", { name: "Open link" }).first().click();
+    const page2 = await page2Promise;
+
+    // Verify payment page loaded
+    await expect(page2.getByRole("heading", { name: "Complete Your Payment" })).toBeVisible();
+    console.log("Payment page loaded successfully");
+
+    // Fill payment details
+    console.log("Filling payment details...");
+    await page2.getByRole("textbox", { name: "Card Number *" }).fill("4242 4242 4242 4242");
+    
+    // Set expiry date
+    await page2.getByRole("combobox").filter({ hasText: "Month" }).click();
+    await page2.getByRole("option", { name: "08" }).click();
+    await page2.getByRole("combobox").filter({ hasText: "Year" }).click();
+    await page2.getByRole("option", { name: "2030" }).click();
+    
+    // Fill CVV and ZIP
+    await page2.getByRole("textbox", { name: "CVV *" }).fill("123");
+    await page2.getByRole("textbox", { name: "ZIP Code *" }).fill("12345");
+    
+    // Fill cardholder name
+    await page2.getByRole("textbox", { name: "Cardholder Name *" }).fill("Michael Johnson");
+    
+    // Accept terms
+    console.log("Accepting terms and conditions...");
+    await page2.getByRole("checkbox", { name: "I agree to the terms and" }).click();
+
+    // Submit payment
+    console.log("Submitting payment...");
+    await page2.getByRole("button", { name: "Pay $11.00 & Subscribe" }).click();
+
+    // Verify subscription activation
+    await expect(page2.getByText("Subscription Activated!", { exact: true })).toBeVisible();
+    console.log("✅ Subscription activated successfully!");
+    console.log("✅ Test completed successfully!");
+  });
+
   test.afterEach(async () => {
     console.log("Subscriptions test cleanup completed");
   });
