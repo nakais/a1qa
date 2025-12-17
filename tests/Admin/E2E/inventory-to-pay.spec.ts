@@ -36,10 +36,11 @@ test.describe("E2E: Inventory to Pay Tests", () => {
     console.log("✓ Filled product name, category, and SKU");
 
     // Fill stock information
-    await page.getByRole("textbox", { name: "Current Stock *" }).fill("7");
+    const initialStock = 7;
+    await page.getByRole("textbox", { name: "Current Stock *" }).fill(initialStock.toString());
     await page.getByRole("textbox", { name: "Min Stock *" }).fill("3");
     await page.getByRole("textbox", { name: "Max Stock *" }).fill("11");
-    console.log("✓ Filled stock: Current=7, Min=3, Max=11");
+    console.log(`✓ Filled stock: Current=${initialStock}, Min=3, Max=11`);
 
     // Fill pricing and create product
     await page.getByRole("textbox", { name: "Selling Price *" }).fill("15");
@@ -64,11 +65,13 @@ test.describe("E2E: Inventory to Pay Tests", () => {
     await page.getByRole("button", { name: "Add" }).first().click();
     console.log("✓ Kindle added to cart (quantity: 1)");
 
-    // Increase quantity to 3
+    // Set quantity to purchase
+    const quantityToPurchase = 3;
     const incrementButton = page.locator(".p-1\\.5 > .flex.items-center.justify-between > div:nth-child(2) > button").first();
-    await incrementButton.click();
-    await incrementButton.click();
-    console.log("✓ Increased quantity to 3");
+    for (let i = 1; i < quantityToPurchase; i++) {
+      await incrementButton.click();
+    }
+    console.log(`✓ Increased quantity to ${quantityToPurchase}`);
 
     // ========== STEP 4: Process Cash Payment ==========
     console.log("\n💵 STEP 4: Processing cash payment...");
@@ -84,7 +87,7 @@ test.describe("E2E: Inventory to Pay Tests", () => {
 
     // Close payment modal
     await page.getByRole("button", { name: "Close" }).click();
-    console.log("✅ Payment completed - 3 items purchased");
+    console.log(`✅ Payment completed - ${quantityToPurchase} items purchased`);
 
     // ========== STEP 5: Return to Inventory and Verify Stock ==========
     console.log("\n📊 STEP 5: Verifying stock count in Inventory...");
@@ -102,9 +105,24 @@ test.describe("E2E: Inventory to Pay Tests", () => {
     await page.getByRole("menuitem", { name: "View" }).click();
     console.log("✓ Opened product details");
 
-    // Verify stock decreased from 7 to 4 (7 - 3 = 4)
+    // Verify stock decreased correctly
     await expect(page.getByText("Stock InformationCurrent")).toBeVisible();
-    console.log("✅ Stock verified - Expected: 4 (Initial: 7, Sold: 3)");
+    
+    // Calculate expected stock
+    const expectedStock = initialStock - quantityToPurchase;
+    
+    // Get actual stock from the page
+    const actualStockElement = page.getByLabel("Product Details").getByText(expectedStock.toString(), { exact: true });
+    await expect(actualStockElement).toBeVisible();
+    const actualStock = parseInt(await actualStockElement.textContent() || "0");
+    
+    // Verify stock matches expected value
+    if (actualStock === expectedStock) {
+      console.log(`✅ Stock verified successfully! Initial: ${initialStock}, Sold: ${quantityToPurchase}, Current: ${actualStock}`);
+      console.log("✅ Stock calculation is correct!");
+    } else {
+      console.log(`❌ Stock mismatch! Expected: ${expectedStock}, Actual: ${actualStock}`);
+    }
 
     // Close details modal
     await page.getByRole("button", { name: "Close" }).nth(1).click();
@@ -122,7 +140,7 @@ test.describe("E2E: Inventory to Pay Tests", () => {
     console.log("✅ Product deleted successfully");
 
     console.log("\n🎉 E2E Test completed successfully!");
-    console.log("Summary: Created product with 7 stock → Sold 3 items → Verified stock = 4 → Deleted product");
+    console.log(`Summary: Created product with ${initialStock} stock → Sold ${quantityToPurchase} items → Verified stock = ${expectedStock} → Deleted product`);
   });
 
   test.afterEach(async () => {
