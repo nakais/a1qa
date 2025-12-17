@@ -35,41 +35,42 @@ test.describe("Subscriptions Tests", () => {
     await expect(page.getByRole("heading", { name: "Subscription Management" })).toBeVisible();
   });
 
-  test("Generate Subscription Link with Custom Expiry", async () => {
+  test("Generate Subscription Link with Custom Expiry and Send via Email", async () => {
     const page = adminSuite.getPage();
+    console.log("Starting: Generate Subscription Link test");
 
-    // Step 1: Open Generate Link dialog
-    console.log("Step 1: Opening Generate Link dialog");
+    // Open Generate Link dialog
+    console.log("Opening Generate Link dialog...");
     await page.getByRole("button", { name: "Generate Link" }).click();
 
-    // Step 2: Select customer
-    console.log("Step 2: Searching and selecting customer");
+    // Search and select customer
+    console.log("Selecting customer: Michael Johnson");
     await page.getByText("Select customer...").click();
     await page.getByPlaceholder("Search customers...").fill("michael");
     await page.getByText("Michael Johnson").click();
 
-    // Step 3: Select subscription plan
-    console.log("Step 3: Selecting subscription plan");
+    // Select subscription plan
+    console.log("Selecting subscription plan: Test Plan5");
     await page.getByRole("combobox", { name: "Subscription Plan (Optional" }).click();
     await page.getByRole("option", { name: "Test Plan5 $11.00/monthly" }).click();
 
-    // Step 4: Set custom expiry
-    console.log("Step 4: Setting custom expiry (100 days)");
+    // Set custom expiry (100 days)
+    console.log("Setting custom expiry: 100 days");
     await page.getByRole("combobox", { name: "Link Expiry *" }).click();
     await page.getByRole("option", { name: "Custom" }).click();
     await page.getByPlaceholder("Enter number of days (1-365)").fill("100");
 
-    // Step 5: Generate link
-    console.log("Step 5: Generating link");
+    // Generate link and verify success
+    console.log("Generating subscription link...");
     await page.getByRole("button", { name: "Generate Link" }).click();
     await expect(page.getByText("✅ Link Generated Successfully!")).toBeVisible();
-    console.log("✅ Link generated successfully");
+    console.log("✅ Link generated successfully!");
 
-    // Step 6: Send via email and close
-    console.log("Step 6: Sending via email and closing dialog");
+    // Send via email and close dialog
+    console.log("Sending link via email...");
     await page.getByRole("button", { name: "Send via Email" }).click();
     await page.getByRole("button", { name: "Done" }).click();
-    console.log("✅ Test completed successfully");
+    console.log("✅ Test completed successfully!");
   });
 
   test.afterEach(async () => {
