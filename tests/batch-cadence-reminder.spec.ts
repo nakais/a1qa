@@ -1,27 +1,43 @@
 import { test, expect } from '@playwright/test';
-import { BatchCadenceHelper } from './helpers';
 
-test('batch cadence reminder workflow', async ({ page }) => {
-  const helper = new BatchCadenceHelper(page);
+// =================== BATCH CADENCE REMINDER TESTS ===================
+
+test("Batch cadence reminder workflow with batch selection", async ({ page }) => {
+  console.log("🧪 Testing batch cadence reminder workflow...");
 
   // Navigate to Batch Cadence tab
-  await helper.navigateToBatchCadence();
+  await page.getByRole('tab', { name: 'Batch Cadence' }).click();
+  console.log("✅ Batch Cadence tab opened");
 
-  // Select first batch
+  // Select first batch from dropdown
   await page.getByRole('combobox').filter({ hasText: 'All Batches (24)' }).click();
   await page.getByText('BATCH_1756477624392_a43028de').click();
+  console.log("✅ First batch selected");
 
-  // Clear filters and select different batch
-  await helper.clearFilters();
-  await helper.selectBatch('BATCH_1756494703537_3d69911f');
+  // Clear filters
+  await page.getByRole('button', { name: 'Clear Filters' }).click();
+  console.log("✅ Filters cleared");
 
-  // Navigate through reminder workflow
-  await helper.openReminderHistory();
-  await helper.openInvoices();
+  // Select different batch
+  await page.getByRole('combobox').filter({ hasText: 'All Batches (24)' }).click();
+  await page.getByRole('option', { name: 'BATCH_1756494703537_3d69911f' }).click();
+  console.log("✅ Second batch selected");
 
-  // Send reminder and verify success
-  await helper.sendReminder();
+  // Open Reminder History
+  await page.getByRole('button', { name: 'Reminder History' }).click();
+  console.log("✅ Reminder History opened");
+
+  // Open Invoices
+  await page.getByRole('button', { name: 'Invoices' }).click();
+  console.log("✅ Invoices view opened");
+
+  // Send reminder
+  await page.getByRole('button', { name: 'Send Reminder' }).click();
+  console.log("✅ Reminder sent");
+
+  // Verify success message
   await expect(page.getByText('Successfully sent to ')).toBeVisible();
+  console.log("✅ Success message displayed");
 
-  console.log('Test completed successfully');
+  console.log("✅ Batch cadence reminder workflow completed successfully");
 });

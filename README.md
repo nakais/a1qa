@@ -29,8 +29,7 @@ npm run report
 
 ```
 tests/
-  ├── batch-cadence-reminder.spec.ts  # Main test file
-  └── helpers.ts                       # Helper functions
+  └── batch-cadence-reminder.spec.ts  # Main test file
 playwright.config.ts                   # Playwright configuration
 package.json                           # Dependencies
 ```
