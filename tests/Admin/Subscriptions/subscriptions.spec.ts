@@ -22,17 +22,17 @@ test.describe("Subscriptions Tests", () => {
     await page.goto(process.env.BASE_URL + "/subscriptions");
 
     // Navigate to Subscriptions tab and verify we're there
-    await page.getByRole("heading", { name: "Subscriptions" }).click();
+    await page.getByRole("heading", { name: "Subscription Management" }).click();
 
     // Verify we're on the Subscriptions tab
-    await expect(page.getByRole("heading", { name: "Subscriptions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Subscription Management" })).toBeVisible();
   });
 
   test("Verify Subscriptions Tab Navigation", async () => {
     const page = adminSuite.getPage();
 
     // Additional verification that we're on the correct tab
-    await expect(page.getByRole("heading", { name: "Subscriptions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Subscription Management" })).toBeVisible();
 
     // You can add more specific checks here based on what should be visible on the Subscriptions tab
     // For example:
