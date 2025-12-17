@@ -38,30 +38,37 @@ test.describe("Subscriptions Tests", () => {
   test("Generate Subscription Link with Custom Expiry", async () => {
     const page = adminSuite.getPage();
 
-    // Open Generate Link dialog
+    console.log("Opening Generate Link dialog...");
     await page.getByRole("button", { name: "Generate Link" }).click();
 
-    // Select customer
+    // Select customer - Search and select Michael Johnson
+    console.log("Selecting customer...");
     await page.getByText("Select customer...").click();
     await page.getByPlaceholder("Search customers...").fill("michael");
     await page.getByText("Michael Johnson").click();
 
     // Select subscription plan
+    console.log("Selecting subscription plan...");
     await page.getByRole("combobox", { name: "Subscription Plan (Optional" }).click();
     await page.getByRole("option", { name: "Test Plan5 $11.00/monthly" }).click();
 
-    // Set custom expiry
+    // Set custom expiry - 100 days
+    console.log("Setting custom expiry to 100 days...");
     await page.getByRole("combobox", { name: "Link Expiry *" }).click();
     await page.getByRole("option", { name: "Custom" }).click();
     await page.getByPlaceholder("Enter number of days (1-365)").fill("100");
 
-    // Generate and verify
+    // Generate link and verify success message
+    console.log("Generating link...");
     await page.getByRole("button", { name: "Generate Link" }).click();
     await expect(page.getByText("✅ Link Generated Successfully!")).toBeVisible();
+    console.log("Link generated successfully!");
 
-    // Send via email and close
+    // Send via email and close dialog
+    console.log("Sending link via email...");
     await page.getByRole("button", { name: "Send via Email" }).click();
     await page.getByRole("button", { name: "Done" }).click();
+    console.log("Test completed successfully!");
   });
 
   test.afterEach(async () => {
