@@ -18,10 +18,13 @@ test("Batch cadence reminder workflow with batch selection", async ({ page }) =>
   await page.getByRole('button', { name: 'Clear Filters' }).click();
   console.log("✅ Filters cleared");
 
-  // Select different batch
+  // Select random batch from dropdown
   await page.getByRole('combobox').filter({ hasText: 'All Batches (24)' }).click();
-  await page.getByRole('option', { name: 'BATCH_1756494703537_3d69911f' }).click();
-  console.log("✅ Second batch selected");
+  const batchOptions = await page.getByRole('option').all();
+  const randomIndex = Math.floor(Math.random() * batchOptions.length);
+  const selectedBatch = await batchOptions[randomIndex].textContent();
+  await batchOptions[randomIndex].click();
+  console.log(`✅ Random batch selected: ${selectedBatch}`);
 
   // Open Reminder History
   await page.getByRole('button', { name: 'Reminder History' }).click();
