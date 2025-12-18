@@ -88,14 +88,12 @@ test.describe("E2E: Send Document to Customer Tests", () => {
 
     // Search for Customer Inventory Buying List
     await page.getByRole("textbox", { name: "Search documents..." }).fill("customer inventory buying list");
-    await page.waitForTimeout(1000); // Wait for search results to load
-    console.log("✓ Searched for: Customer Inventory Buying List");
+    await expect(page.getByLabel("Send Documents to Michael")).toContainText("Customer Inventory Buying List");
+    console.log("✓ Found document: Customer Inventory Buying List");
 
-    // Select first search result
-    const firstCheckbox = page.getByRole("checkbox").first();
-    await expect(firstCheckbox).toBeVisible();
-    await firstCheckbox.check();
-    console.log("✓ Selected first search result");
+    // Select document (dynamic - works with any date/size)
+    await page.getByRole("checkbox", { name: /Customer Inventory Buying List/ }).check();
+    console.log("✓ Selected document");
 
     // Send document
     await page.getByRole("button", { name: /Send \(\d+\)/ }).click();
