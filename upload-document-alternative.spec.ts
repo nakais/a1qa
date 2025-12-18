@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
-import * as path from 'path';
 
 test('should upload and extract document', async ({ page }) => {
   console.log('Starting document upload test');
   
-  // Define file path - use path.resolve for absolute path
-  const filePath = path.resolve('D:/Lab3/HarpMd/l3-us-qa/Staging/Non-Integrated/testData/Digital document upload.pdf');
+  // Define file path - use forward slashes (works on Windows with Node.js)
+  const filePath = 'D:/Lab3/HarpMd/l3-us-qa/Staging/Non-Integrated/testData/Digital document upload.pdf';
   
   // Upload document
   await page.getByRole('button', { name: 'Upload Document' }).click();
