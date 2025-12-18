@@ -1,0 +1,24 @@
+import { test, expect } from '@playwright/test';
+
+test('should upload and extract document', async ({ page }) => {
+  console.log('Starting document upload test');
+  
+  // Define file path - use forward slashes (works on Windows with Node.js)
+  const filePath = 'D:/Lab3/HarpMd/l3-us-qa/Staging/Non-Integrated/testData/Digital document upload.pdf';
+  
+  // Upload document
+  await page.getByRole('button', { name: 'Upload Document' }).click();
+  await page.getByRole('button', { name: 'Browse Files' }).setInputFiles(filePath);
+  console.log('File uploaded: Digital document upload.pdf');
+  
+  // Extract and save document
+  await page.getByRole('button', { name: 'Extract Document' }).click();
+  console.log('Document extraction initiated');
+  
+  await page.getByRole('button', { name: 'Confirm & Save' }).click();
+  console.log('Document saved successfully');
+  
+  // Verify success
+  await expect(page.getByText('Success', { exact: true })).toBeVisible();
+  console.log('Document sent successfully');
+});

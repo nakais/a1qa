@@ -1,0 +1,18 @@
+Alternative selectors for the Send button if the current one doesn't work:
+
+Option 1 (Current - Most flexible):
+await page.getByRole("button").filter({ hasText: /^Send/ }).click();
+
+Option 2 (Within dialog context):
+await page.getByLabel("Send Documents to Michael").getByRole("button", { name: /Send/ }).click();
+
+Option 3 (Exact match with number):
+await page.getByRole("button", { name: "Send (1)" }).click();
+
+Option 4 (Last resort - by position):
+await page.getByRole("button").filter({ hasText: "Send" }).last().click();
+
+If none work, check:
+1. Is the checkbox actually getting checked?
+2. Is the button disabled until checkbox is selected?
+3. What's the exact button text after selection?

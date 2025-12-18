@@ -1,0 +1,13 @@
+{
+  "name": "document-customer-search-test",
+  "version": "1.0.0",
+  "description": "Playwright tests for document and customer search functionality",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
