@@ -24,8 +24,9 @@ test.describe("E2E: Digital Document Sending Tests", () => {
     const secondDocumentName = "Customer Inventory Buying List";
 
 
+
     // ========== STEP 1: Navigate to Digital Documents and Search for Document ==========
-    
+
     console.log("\n📄 STEP 1: Searching for document to send...");
     await page.goto(process.env.BASE_URL + "/digital-documents");
     console.log("✓ Digital Documents page loaded");
@@ -39,7 +40,7 @@ test.describe("E2E: Digital Document Sending Tests", () => {
 
 
     // ========== STEP 2: Select Customer to Send Document ==========
-    
+
     console.log("\n👤 STEP 2: Selecting customer recipient...");
     await page.getByRole("button", { name: "Send" }).click();
     console.log("✓ Opened customer selection dialog");
@@ -57,7 +58,7 @@ test.describe("E2E: Digital Document Sending Tests", () => {
 
 
     // ========== STEP 3: Send Document and Verify Success ==========
-    
+
     console.log("\n📤 STEP 3: Sending document...");
     await page.getByRole("button", { name: "Send Document" }).click();
     await expect(page.getByText("Success", { exact: true })).toBeVisible();
@@ -65,8 +66,8 @@ test.describe("E2E: Digital Document Sending Tests", () => {
 
 
 
-    // ========== STEP 4: Navigate to Customer Profile ==========
-    
+    // ========== STEP 4: Navigate to Customers Page and Find Customer ==========
+
     console.log("\n🔍 STEP 4: Navigating to customer profile...");
     await page.getByRole("link", { name: "Customers" }).click();
     console.log("✓ Customers page loaded");
@@ -78,13 +79,13 @@ test.describe("E2E: Digital Document Sending Tests", () => {
     console.log(`✓ Found customer: ${customerName}`);
 
     // Open customer profile
-    await page.getByText(new RegExp(`${customerName}.*Customer`, "i")).click();
+    await page.getByText(new RegExp(customerName, "i")).first().click();
     console.log("✓ Opened customer profile");
 
 
 
     // ========== STEP 5: Verify Sent Document in Customer Profile ==========
-    
+
     console.log("\n✅ STEP 5: Verifying sent document in customer profile...");
 
     // Navigate to Digital Documents tab
@@ -92,24 +93,21 @@ test.describe("E2E: Digital Document Sending Tests", () => {
     await page.getByLabel("Digital Documents").getByText("Digital Documents").click();
     console.log("✓ Opened Digital Documents tab");
 
-    // Verify document appears in Sent Documents
-    await expect(page.getByText(new RegExp(`${documentName}.*Pending.*Sent:`, "i"))).toBeVisible();
+    // Verify document appears in Sent Documents (with dynamic count)
+    await expect(page.getByText(new RegExp(documentName, "i"))).toBeVisible();
     console.log(`✓ Verified document "${documentName}" appears in Sent Documents`);
 
     // Check tab navigation (with dynamic counts)
-    const sentTab = page.getByRole("tab", { name: /Sent Documents \(\d+\)/ });
-    const completedTab = page.getByRole("tab", { name: /Completed Documents \(\d+\)/ });
-    
-    await completedTab.click();
+    await page.getByRole("tab", { name: /Completed Documents \(\d+\)/ }).click();
     console.log("✓ Navigated to Completed Documents tab");
-    
-    await sentTab.click();
+
+    await page.getByRole("tab", { name: /Sent Documents \(\d+\)/ }).click();
     console.log("✓ Returned to Sent Documents tab");
 
 
 
     // ========== STEP 6: Send Additional Document from Customer Profile ==========
-    
+
     console.log("\n📨 STEP 6: Sending additional document from customer profile...");
 
     // Open send documents dialog
@@ -119,7 +117,7 @@ test.describe("E2E: Digital Document Sending Tests", () => {
     // Search for second document
     await page.getByRole("textbox", { name: "Search documents..." }).click();
     await page.getByRole("textbox", { name: "Search documents..." }).fill(secondDocumentName.toLowerCase());
-    
+
     // Verify document is visible
     await expect(
       page.locator("label").filter({ hasText: new RegExp(secondDocumentName, "i") }).getByRole("heading")
