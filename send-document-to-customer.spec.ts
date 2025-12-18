@@ -91,11 +91,13 @@ test.describe("E2E: Send Document to Customer Tests", () => {
     await expect(page.getByLabel("Send Documents to Michael")).toContainText("Customer Inventory Buying List");
     console.log("✓ Found document: Customer Inventory Buying List");
 
-    // Select document (dynamic - works with any date/size)
-    const checkbox = page.getByRole("checkbox", { name: /Customer Inventory Buying List/ });
-    await expect(checkbox).toBeVisible();
-    await checkbox.check();
+    // Select document - click on the label/container instead of checkbox directly
+    await page.locator("label").filter({ hasText: /Customer Inventory Buying List/ }).first().click();
     console.log("✓ Selected document");
+
+    // Verify checkbox is checked
+    await expect(page.getByRole("checkbox").first()).toBeChecked();
+    console.log("✓ Checkbox confirmed checked");
 
     // Send document - locate within dialog to avoid conflicts
     const sendDialog = page.getByLabel("Send Documents to Michael");
