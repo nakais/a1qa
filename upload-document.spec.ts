@@ -4,10 +4,10 @@ import path from 'path';
 test('should upload and extract document', async ({ page }) => {
   console.log('Starting document upload test');
   
-  // Define file paths - update these paths to match your local file locations
-  const testFilesDir = path.join(__dirname, 'test-files');
-  const file1 = path.join(testFilesDir, 'Customer Inventory Buying List.pdf');
-  const file2 = path.join(testFilesDir, 'Customer Inventory Buying Uploaded List.pdf');
+  // Define file paths from testData directory
+  const testDataDir = 'D:\\Lab3\\HarpMd\\l3-us-qa\\Staging\\Non-Integrated\\testData';
+  const file1 = path.join(testDataDir, 'Customer Inventory Buying List.pdf');
+  const file2 = path.join(testDataDir, 'Customer Inventory Buying Uploaded List.pdf');
   
   // First upload attempt - cancel
   await page.getByRole('button', { name: 'Upload Document' }).click();
