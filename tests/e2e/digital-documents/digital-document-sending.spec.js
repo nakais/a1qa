@@ -32,7 +32,6 @@ test.describe("E2E: Digital Document Sending Tests", () => {
     console.log("✓ Digital Documents page loaded");
 
     // Search for document
-    await page.getByRole("textbox", { name: "Search documents by name..." }).click();
     await page.getByRole("textbox", { name: "Search documents by name..." }).fill(documentName.toLowerCase());
     await expect(page.getByText(documentName)).toBeVisible();
     console.log(`✓ Found document: ${documentName}`);
@@ -46,7 +45,6 @@ test.describe("E2E: Digital Document Sending Tests", () => {
     console.log("✓ Opened customer selection dialog");
 
     // Search for customer
-    await page.getByRole("textbox", { name: "Search customers by name," }).click();
     await page.getByRole("textbox", { name: "Search customers by name," }).fill(customerName.toLowerCase());
     await expect(page.getByText(customerName)).toBeVisible();
     console.log(`✓ Found customer: ${customerName}`);
@@ -73,7 +71,6 @@ test.describe("E2E: Digital Document Sending Tests", () => {
     console.log("✓ Customers page loaded");
 
     // Search for customer
-    await page.getByRole("textbox", { name: "Search customers..." }).click();
     await page.getByRole("textbox", { name: "Search customers..." }).fill(customerName.toLowerCase());
     await expect(page.getByText(customerName, { exact: true })).toBeVisible();
     console.log(`✓ Found customer: ${customerName}`);
@@ -115,7 +112,6 @@ test.describe("E2E: Digital Document Sending Tests", () => {
     console.log("✓ Opened Send Documents dialog");
 
     // Search for second document
-    await page.getByRole("textbox", { name: "Search documents..." }).click();
     await page.getByRole("textbox", { name: "Search documents..." }).fill(secondDocumentName.toLowerCase());
 
     // Verify document is visible
