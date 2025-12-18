@@ -11,7 +11,9 @@ test.describe('Document and Customer Search', () => {
     console.log('Navigated to digital documents page');
     
     // Search for document
-    await searchDocument(page, 'customer inventory buying list');
+    await page.getByRole('textbox', { name: 'Search documents by name...' }).click();
+    await page.getByRole('textbox', { name: 'Search documents by name...' }).fill('customer inventory buying list');
+    await page.getByRole('textbox', { name: 'Search documents by name...' }).press('Enter');
     await expect(page.getByText('Customer Inventory Buying List')).toBeVisible();
     console.log('Document found: Customer Inventory Buying List');
     
@@ -20,21 +22,24 @@ test.describe('Document and Customer Search', () => {
     console.log('Clicked Send button');
     
     // Test customer search by name
-    await searchCustomer(page, 'michael johnson');
+    await page.getByRole('textbox', { name: 'Search customers by name,' }).click();
+    await page.getByRole('textbox', { name: 'Search customers by name,' }).fill('michael johnson');
     await expect(page.getByText('Michael Johnson')).toBeVisible();
     console.log('Customer found by name: Michael Johnson');
     await page.getByRole('button', { name: 'Cancel' }).click();
     
     // Test customer search by email
     await page.getByRole('button', { name: 'Send' }).click();
-    await searchCustomer(page, 'naz+test@labthree.org');
+    await page.getByRole('textbox', { name: 'Search customers by name,' }).click();
+    await page.getByRole('textbox', { name: 'Search customers by name,' }).fill('naz+test@labthree.org');
     await expect(page.getByText('naz+test@labthree.org')).toBeVisible();
     console.log('Customer found by email: naz+test@labthree.org');
     await page.getByRole('button', { name: 'Cancel' }).click();
     
     // Search customer by phone and send document
     await page.getByRole('button', { name: 'Send' }).click();
-    await searchCustomer(page, '5551234567');
+    await page.getByRole('textbox', { name: 'Search customers by name,' }).click();
+    await page.getByRole('textbox', { name: 'Search customers by name,' }).fill('5551234567');
     console.log('Searching customer by phone: 5551234567');
     
     // Select customer from results
@@ -51,18 +56,3 @@ test.describe('Document and Customer Search', () => {
     console.log('Document sent successfully');
   });
 });
-
-// Helper function to search for a document
-async function searchDocument(page, documentName: string) {
-  const searchBox = page.getByRole('textbox', { name: 'Search documents by name...' });
-  await searchBox.click();
-  await searchBox.fill(documentName);
-  await searchBox.press('Enter');
-}
-
-// Helper function to search for a customer
-async function searchCustomer(page, searchTerm: string) {
-  const searchBox = page.getByRole('textbox', { name: 'Search customers by name,' });
-  await searchBox.click();
-  await searchBox.fill(searchTerm);
-}
