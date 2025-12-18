@@ -1,32 +1,37 @@
-# Document and Customer Search Test
+# Document and Customer Search Test Suite
 
 Playwright test suite for document and customer search functionality.
 
 ## Test Coverage
 
-The test verifies:
-- Document search by name
-- Customer search by name, email, and phone number
-- Document sending to selected customer
-- Success confirmation
-
-## Structure
-
-- `document-customer-search.spec.ts` - Main test file with helper functions
-- `playwright.config.ts` - Playwright configuration
-- `package.json` - Dependencies and scripts
+### Test Files:
+1. **document-customer-search.spec.ts** - Document search and customer selection
+2. **manual-entry-recipients.spec.ts** - Manual entry of multiple recipients
+3. **upload-document.spec.ts** - Document upload and extraction
 
 ## Setup
 
+### Install Dependencies
 ```bash
 npm install
+npx playwright install chromium
 ```
+
+### Setup Test Files (for upload tests)
+Place your test PDF files in the `test-files/` directory:
+- `Customer Inventory Buying List.pdf`
+- `Customer Inventory Buying Uploaded List.pdf`
+
+See `test-files/README.md` for more details.
 
 ## Run Tests
 
 ```bash
-# Headless mode
+# Run all tests (headless)
 npm test
+
+# Run specific test file
+npx playwright test upload-document.spec.ts
 
 # Headed mode (see browser)
 npm run test:headed
@@ -35,10 +40,11 @@ npm run test:headed
 npm run test:ui
 ```
 
-## Key Improvements
+## Project Structure
 
-1. **Helper Functions**: Extracted `searchDocument()` and `searchCustomer()` for reusability
-2. **Console Logging**: Added strategic console logs to track test progress
-3. **Constants**: Extracted BASE_URL for easier maintenance
-4. **Comments**: Added descriptive comments for each test section
-5. **Test Organization**: Wrapped in `test.describe()` for better structure
+- `document-customer-search.spec.ts` - Search and send document to customer
+- `manual-entry-recipients.spec.ts` - Manual recipient entry test
+- `upload-document.spec.ts` - File upload test
+- `playwright.config.ts` - Playwright configuration
+- `test-files/` - Directory for test PDF files
+- `package.json` - Dependencies and scripts
