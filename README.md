@@ -8,6 +8,8 @@ Playwright test suite for document and customer search functionality.
 1. **document-customer-search.spec.ts** - Document search and customer selection
 2. **manual-entry-recipients.spec.ts** - Manual entry of multiple recipients
 3. **upload-document.spec.ts** - Document upload and extraction
+4. **document-logs.spec.ts** - Search and filter document logs
+5. **send-document-to-customer.spec.ts** - E2E test for sending documents and verifying in customer profile
 
 ## Setup
 
