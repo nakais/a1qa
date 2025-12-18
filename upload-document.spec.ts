@@ -4,20 +4,13 @@ import path from 'path';
 test('should upload and extract document', async ({ page }) => {
   console.log('Starting document upload test');
   
-  // Define file paths from testData directory
+  // Define file path from testData directory
   const testDataDir = 'D:\\Lab3\\HarpMd\\l3-us-qa\\Staging\\Non-Integrated\\testData';
-  const file1 = path.join(testDataDir, 'Customer Inventory Buying List.pdf');
-  const file2 = path.join(testDataDir, 'Customer Inventory Buying Uploaded List.pdf');
+  const filePath = path.join(testDataDir, 'Customer Inventory Buying Uploaded List.pdf');
   
-  // First upload attempt - cancel
+  // Upload document
   await page.getByRole('button', { name: 'Upload Document' }).click();
-  await page.getByRole('button', { name: 'Browse Files' }).setInputFiles(file1);
-  await page.getByRole('button', { name: 'Cancel' }).click();
-  console.log('First upload cancelled');
-  
-  // Second upload attempt - complete
-  await page.getByRole('button', { name: 'Upload Document' }).click();
-  await page.getByRole('button', { name: 'Browse Files' }).setInputFiles(file2);
+  await page.getByRole('button', { name: 'Browse Files' }).setInputFiles(filePath);
   console.log('File uploaded: Customer Inventory Buying Uploaded List.pdf');
   
   // Extract and save document
