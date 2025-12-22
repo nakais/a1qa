@@ -29,22 +29,29 @@ test("Customer payment plans - create and edit", async () => {
   console.log("✓ Configured payment count");
   
   // Select first saved card (dynamic check)
-  try {
-    const savedCardLocator = page.locator('.rounded-xl.border.bg-card.text-card-foreground.shadow.cursor-pointer > .p-4').first();
-    const cardExists = await savedCardLocator.isVisible({ timeout: 3000 });
-    
-    if (!cardExists) {
-      console.log("❌ ERROR: No saved card available");
-      throw new Error("No saved card found");
-    }
-    
-    await savedCardLocator.click();
-    await page.getByRole('radio').first().click();
-    console.log("✓ Selected first saved card");
-  } catch (error) {
+  const savedCards = page.locator('.rounded-xl.border.bg-card.text-card-foreground.shadow.cursor-pointer > .p-4');
+  const cardCount = await savedCards.count();
+  
+  if (cardCount === 0) {
     console.log("❌ ERROR: No saved card available");
     throw new Error("No saved card found");
   }
+  
+  // Click first saved card
+  await savedCards.first().click();
+  
+  // Click the radio button for first saved card (skip first radio which is usually "Enter New Card")
+  const allRadios = page.getByRole('radio');
+  const radioCount = await allRadios.count();
+  
+  if (radioCount < 2) {
+    console.log("❌ ERROR: No saved card radio button found");
+    throw new Error("No saved card radio button available");
+  }
+  
+  // First saved card radio is typically at index 1 (index 0 is "Enter New Card")
+  await allRadios.nth(1).click();
+  console.log("✓ Selected first saved card");
   
   await page.getByRole('button', { name: 'Create Payment Plan' }).click();
   await expect(page.getByText('Success')).toBeVisible();
