@@ -81,11 +81,11 @@ test("Customer payment plans - create and edit", async () => {
   await expect(page.getByText('Success')).toBeVisible();
   console.log("✅ Second payment plan created successfully");
 
-  // Edit first scheduled payment
+  // Edit first scheduled payment and pause it
   console.log("🔍 Finding first scheduled payment...");
 
   let paymentFound = false;
-  const maxPayments = 7;
+  const maxPayments = 14;
 
   for (let i = 1; i <= maxPayments; i++) {
     const paymentText = `Payment ${i} of ${maxPayments}`;
@@ -106,19 +106,24 @@ test("Customer payment plans - create and edit", async () => {
       
       // Edit payment date
       await page.getByRole('button', { name: 'Edit Date' }).first().click();
-      await page.getByRole('textbox').fill('2026-05-22');
+      await page.getByRole('textbox').fill('2026-03-19');
       await page.getByRole('button', { name: 'Save' }).click();
-      console.log(`✓ Updated date for Payment ${i}`);
+      console.log(`✓ Updated date for Payment ${i} to 2026-03-19`);
       
       // Edit payment amount
+      await expect(page.getByRole('button', { name: 'Edit Amount' }).first()).toBeVisible();
       await page.getByRole('button', { name: 'Edit Amount' }).first().click();
-      await page.getByPlaceholder('0.00').fill('2.3');
+      await page.getByPlaceholder('0.00').fill('0.55');
       await page.getByRole('button', { name: 'Save' }).click();
-      console.log(`✓ Updated amount for Payment ${i}`);
+      console.log(`✓ Updated amount for Payment ${i} to $0.55`);
+      
+      // Pause payment
+      await page.getByRole('button', { name: 'Pause' }).first().click();
+      console.log(`✓ Paused Payment ${i}`);
       
       // Verify success
       await expect(page.getByText('Success', { exact: true })).toBeVisible();
-      console.log(`✅ Payment ${i} edited successfully`);
+      console.log(`✅ Payment ${i} edited and paused successfully`);
       
       paymentFound = true;
       break;
