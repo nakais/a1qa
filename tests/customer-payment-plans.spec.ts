@@ -28,10 +28,23 @@ test("Customer payment plans - create and edit", async () => {
   await page.locator('.relative.h-1\\.5').click();
   console.log("✓ Configured payment count");
   
-  // Select existing card
-  await page.locator('.rounded-xl.border.bg-card.text-card-foreground.shadow.cursor-pointer > .p-4').first().click();
-  await page.getByRole('radio').nth(2).click();
-  console.log("✓ Selected existing card");
+  // Select first saved card (dynamic check)
+  try {
+    const savedCardLocator = page.locator('.rounded-xl.border.bg-card.text-card-foreground.shadow.cursor-pointer > .p-4').first();
+    const cardExists = await savedCardLocator.isVisible({ timeout: 3000 });
+    
+    if (!cardExists) {
+      console.log("❌ ERROR: No saved card available");
+      throw new Error("No saved card found");
+    }
+    
+    await savedCardLocator.click();
+    await page.getByRole('radio').first().click();
+    console.log("✓ Selected first saved card");
+  } catch (error) {
+    console.log("❌ ERROR: No saved card available");
+    throw new Error("No saved card found");
+  }
   
   await page.getByRole('button', { name: 'Create Payment Plan' }).click();
   await expect(page.getByText('Success')).toBeVisible();
