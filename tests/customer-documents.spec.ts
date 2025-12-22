@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test("View customer details, and digital documents tab", async ({ page }) => {
+test("View customer details, and digital documents tab", async () => {
+  const page = adminSuite.getPage();
   console.log("🧪 Testing customer details and digital documents tab...");
   
   // Search for customer

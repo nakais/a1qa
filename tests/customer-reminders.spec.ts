@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test('Customer reminders - send and filter', async ({ page }) => {
+test('Customer reminders - send and filter', async () => {
+  const page = adminSuite.getPage();
   console.log("🧪 Testing customer reminders functionality...");
   
   // Search for customer
