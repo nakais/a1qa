@@ -1,1 +1,36 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
 
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+*.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Traces and videos
+trace.zip
+videos/
+screenshots/
