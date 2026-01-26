@@ -48,3 +48,18 @@ test('Checking terminal are loading successfully', async () => {
 
   console.log(`OK Found ${terminalCount} terminal(s) available`);
 });
+
+test('test', async ({ page }) => {
+  await page.getByRole('button', { name: 'Pay Now' }).click();
+  await page.getByRole('button', { name: 'Sale' }).click();
+  await page.getByRole('menuitem', { name: 'Sale' }).click();
+  await page.getByRole('button', { name: 'Credit Card' }).click();
+  await page.getByRole('menuitem', { name: 'Credit Card' }).click();
+  await page.getByRole('button', { name: 'Card present' }).click();
+  await page.getByRole('menuitem', { name: 'Credit Card Terminal' }).click();
+  await page.getByRole('button', { name: 'Choose a terminal' }).click();
+
+  // Test passes when terminal list is visible
+  await expect(page.getByText('Terminal 1Terminal 2Terminal')).toBeVisible();
+  console.log('OK Terminal list is visible');
+});
