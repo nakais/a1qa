@@ -50,6 +50,7 @@ test('Checking terminal are loading successfully', async () => {
 });
 
 test('test', async ({ page }) => {
+  // Complete payment flow until terminal selection
   await page.getByRole('button', { name: 'Pay Now' }).click();
   await page.getByRole('button', { name: 'Sale' }).click();
   await page.getByRole('menuitem', { name: 'Sale' }).click();
@@ -59,7 +60,13 @@ test('test', async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Credit Card Terminal' }).click();
   await page.getByRole('button', { name: 'Choose a terminal' }).click();
 
-  // Test passes when terminal list is visible
-  await expect(page.getByText('Terminal 1Terminal 2Terminal')).toBeVisible();
-  console.log('OK Terminal list is visible');
+  // Test passes when terminal list is visible; fails otherwise
+  const terminalList = page.getByText('Terminal 1Terminal 2Terminal');
+  try {
+    await expect(terminalList).toBeVisible();
+    console.log('OK Terminal list is visible');
+  } catch (error) {
+    console.error('ERROR Terminal list is not visible');
+    throw error;
+  }
 });
